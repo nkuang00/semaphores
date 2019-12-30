@@ -1,14 +1,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <unistd.h>
 #include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/types.h>
+#include <errno.h>
 #include <sys/shm.h>
+
+#define KEY_SEM 24602
+
 
 #define KEY 24601
 #define SEG_SIZE 200
 
 int main() {
+
+  int semd;
+  int r;
+  int v;
+  FILE * f;
+
+  semd = semget(KEY_SEM, 1, 0);
+  struct sembuf sb;
+  sb.sem_num = 0;
+  sb.sem_op = -1;
+
+  semop(semd, &sb, 1);
+
+  f = fopen("story", "a");
+
+  //sb.sem_flg = SEM_UNDO;
+
+
+  //--------------------
 
   int shmd;
   char * data;
@@ -25,22 +50,18 @@ int main() {
     printf("%s\n", data);
 
   printf("Your addition: ");
-  fgets(input, 0, stdin);
-
   fgets(data, SEG_SIZE, stdin);
-  *strchr(data, '\n') = 0;
-  printf("Current contents: [%s]\n", data);
+  fputs(data, f);
+
 
 
   shmdt(data);
 
-  // printf("Would you like to remove the segment?(y/n) ");
-  // fgets(input, 3, stdin);
+  sb.sem_op = 1;
+  semop(semd, &sb, 1);
 
-  // if (input[0] == 'y') {
-  //   shmctl(shmd, IPC_RMID, 0);
-  //   printf("segment deleted\n");
-  // }
+  fclose(f);
+  printf("\n");
 
   return 0;
 }
